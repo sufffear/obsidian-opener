@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Открыть заметку в Obsidian</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 1.25rem;
+      background: Canvas;
+      color: CanvasText;
+    }
+    main {
+      width: min(100%, 34rem);
+      padding: clamp(1.25rem, 5vw, 2.5rem);
+      border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
+      border-radius: 1.25rem;
+      text-align: center;
+    }
+    h1 { margin-top: 0; font-size: clamp(1.5rem, 6vw, 2rem); }
+    p { line-height: 1.55; }
+    .button {
+      display: flex;
+      min-height: 4.5rem;
+      align-items: center;
+      justify-content: center;
+      margin: 1.5rem 0;
+      padding: 1rem 1.25rem;
+      border-radius: 0.9rem;
+      background: #6750a4;
+      color: #fff;
+      font-size: 1.3rem;
+      font-weight: 700;
+      text-decoration: none;
+      touch-action: manipulation;
+    }
+    .button:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
+    .button[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+    #status { min-height: 1.5em; }
+    .hint { font-size: 0.95rem; opacity: 0.82; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Открыть заметку в Obsidian</h1>
+    <p id="message">Нажмите кнопку, чтобы передать ссылку приложению Obsidian.</p>
+    <a id="openButton" class="button" role="button" aria-disabled="true">Открыть в Obsidian</a>
+    <p id="status" role="status" aria-live="polite"></p>
+    <p class="hint">Если переход не сработал, откройте эту страницу во внешнем браузере. В Telegram: меню ⋮ → «Открыть во внешнем браузере».</p>
+  </main>
+  <script>
+    (() => {
+      "use strict";
+
+      function encodeQueryValue(value) {
+        return encodeURIComponent(value).replace(/[!'()*]/g, (char) =>
+          `%${char.charCodeAt(0).toString(16).toUpperCase()}`
+        );
+      }
+
+      function buildObsidianUriFromHash(hash) {
+        const fragment = hash.startsWith("#") ? hash.slice(1) : hash;
+        const params = new URLSearchParams(fragment);
+        const vault = params.get("vault");
+        const file = params.get("file");
+        if (!vault || !vault.trim() || !file || !file.trim()) return null;
+        if (file.startsWith("/") || file.includes("\\") || file.includes("://")) return null;
+        const segments = file.split("/");
+        if (segments.some((part) => part === "" || part === "." || part === "..")) return null;
+        return `obsidian://open?vault=${encodeQueryValue(vault)}&file=${encodeQueryValue(file)}`;
+      }
+
+      window.buildObsidianUriFromHash = buildObsidianUriFromHash;
+
+      const button = document.getElementById("openButton");
+      const status = document.getElementById("status");
+      const message = document.getElementById("message");
+      const uri = buildObsidianUriFromHash(window.location.hash);
+
+      if (uri) {
+        button.href = uri;
+        button.setAttribute("aria-disabled", "false");
+      } else {
+        button.setAttribute("aria-disabled", "true");
+        message.textContent = "Ссылка не содержит корректные параметры vault и относительного пути заметки.";
+      }
+
+      button.addEventListener("click", () => {
+        if (uri) {
+          status.textContent = "Если Obsidian не открылся, откройте страницу во внешнем браузере (в Telegram — меню ⋮ → «Открыть во внешнем браузере»).";
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
