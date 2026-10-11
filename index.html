@@ -97,6 +97,23 @@
           status.textContent = "Если Obsidian не открылся, откройте страницу во внешнем браузере (в Telegram — меню ⋮ → «Открыть во внешнем браузере»).";
         }
       });
+
+      if (uri) {
+        const attemptKey = `obsidian-auto-open:${uri}`;
+        let attempted = false;
+        try {
+          attempted = sessionStorage.getItem(attemptKey) === "1";
+          if (!attempted) sessionStorage.setItem(attemptKey, "1");
+        } catch {
+          const state = window.history.state || {};
+          attempted = state[attemptKey] === true;
+          if (!attempted) window.history.replaceState({ ...state, [attemptKey]: true }, "", window.location.href);
+        }
+        if (!attempted) {
+          status.textContent = "Пробуем открыть Obsidian. Если переход не сработает, нажмите кнопку ниже.";
+          window.location.assign(uri);
+        }
+      }
     })();
   </script>
 </body>
